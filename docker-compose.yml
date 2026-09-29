@@ -1,0 +1,148 @@
+services:
+  redis-master:
+    image: redis:8
+    container_name: redis-master
+    # Конфиг узла создаётся в /data при первом запуске, дальше его переписывает Sentinel (см. conf/redis-entrypoint.sh)
+    command: sh /usr/local/etc/redis/redis-entrypoint.sh
+    environment:
+      REDIS_ANNOUNCE_HOST: master
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./conf:/usr/local/etc/redis:ro
+      - master-data:/data
+    networks:
+      - redis-net
+  replica-1:
+    image: redis:8
+    container_name: redis-replica-1
+    command: sh /usr/local/etc/redis/redis-entrypoint.sh
+    environment:
+      REDIS_ANNOUNCE_HOST: replica-1
+      REDIS_REPLICAOF: redis-master 6379
+    volumes:
+      - ./conf:/usr/local/etc/redis:ro
+      - replica-1-data:/data
+    ports:
+      - "6380:6379"
+    networks:
+      - redis-net
+  replica-2:
+    image: redis:8
+    container_name: redis-replica-2
+    command: sh /usr/local/etc/redis/redis-entrypoint.sh
+    environment:
+      REDIS_ANNOUNCE_HOST: replica-2
+      REDIS_REPLICAOF: redis-master 6379
+    volumes:
+      - ./conf:/usr/local/etc/redis:ro
+      - replica-2-data:/data
+    ports:
+      - "6381:6379"
+    networks:
+      - redis-net
+  sentinel-1:
+    image: redis:8
+    container_name: redis-sentinel-1
+    # Шаблон копируется только при первом запуске: дальше Sentinel хранит в /data/sentinel.conf
+    # текущего мастера и эпоху, и перезапуск не должен их затирать
+    command: sh -c "[ -f /data/sentinel.conf ] || cp /usr/local/etc/redis/sentinel.conf /data/sentinel.conf; exec redis-sentinel /data/sentinel.conf"
+    volumes:
+      - ./conf/sentinel.conf:/usr/local/etc/redis/sentinel.conf:ro
+      - sentinel-1-data:/data
+    ports:
+      - "26379:26379"
+    networks:
+      - redis-net
+    depends_on:
+      - redis-master
+  sentinel-2:
+    image: redis:8
+    container_name: redis-sentinel-2
+    command: sh -c "[ -f /data/sentinel.conf ] || cp /usr/local/etc/redis/sentinel.conf /data/sentinel.conf; exec redis-sentinel /data/sentinel.conf"
+    volumes:
+      - ./conf/sentinel.conf:/usr/local/etc/redis/sentinel.conf:ro
+      - sentinel-2-data:/data
+    ports:
+      - "26380:26379"
+    networks:
+      - redis-net
+    depends_on:
+      - redis-master
+  sentinel-3:
+    image: redis:8
+    container_name: redis-sentinel-3
+    command: sh -c "[ -f /data/sentinel.conf ] || cp /usr/local/etc/redis/sentinel.conf /data/sentinel.conf; exec redis-sentinel /data/sentinel.conf"
+    volumes:
+      - ./conf/sentinel.conf:/usr/local/etc/redis/sentinel.conf:ro
+      - sentinel-3-data:/data
+    ports:
+      - "26381:26379"
+    networks:
+      - redis-net
+    depends_on:
+      - redis-master
+  redis-insight:
+    image: redis/redisinsight:latest
+    container_name: redis-insight
+    ports:
+      - "5540:5540"
+    depends_on:
+      - redis-master
+      - replica-1
+      - replica-2
+      - sentinel-1
+      - sentinel-2
+      - sentinel-3
+    networks:
+      - redis-net
+  app:
+    build: .
+    container_name: gamehub-app
+    restart: unless-stopped
+    # --reload: код синхронизирует compose watch, uvicorn сам перезапускается при изменениях
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      REDIS_SENTINELS: sentinel-1:26379,sentinel-2:26379,sentinel-3:26379
+      REDIS_MASTER_NAME: mymaster
+      LOG_LEVEL: DEBUG
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis-master
+      - replica-1
+      - replica-2
+      - sentinel-1
+      - sentinel-2
+      - sentinel-3
+    networks:
+      - redis-net
+    develop:
+      watch:
+        # Код -> /app в контейнере без пересборки образа
+        - action: sync
+          path: .
+          target: /app
+          ignore:
+            - .venv/
+            - .idea/
+            - conf/
+        # Зависимости или образ поменялись -> пересобрать
+        - action: rebuild
+          path: pyproject.toml
+        - action: rebuild
+          path: uv.lock
+        - action: rebuild
+          path: Dockerfile
+
+networks:
+  redis-net:
+    driver: bridge
+
+volumes:
+  master-data:
+  replica-1-data:
+  replica-2-data:
+  sentinel-1-data:
+  sentinel-2-data:
+  sentinel-3-data:

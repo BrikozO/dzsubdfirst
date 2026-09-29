@@ -1,0 +1,124 @@
+{
+  "players": [
+    {
+      "id": "seed-1",
+      "name": "Aurora",
+      "level": 42,
+      "region": "eu"
+    },
+    {
+      "id": "seed-2",
+      "name": "Blaze",
+      "level": 17,
+      "region": "na"
+    },
+    {
+      "id": "seed-3",
+      "name": "Cipher",
+      "level": 33,
+      "region": "asia"
+    },
+    {
+      "id": "seed-4",
+      "name": "Drift",
+      "level": 8,
+      "region": "eu"
+    },
+    {
+      "id": "seed-5",
+      "name": "Echo",
+      "level": 25,
+      "region": "sa"
+    },
+    {
+      "id": "seed-6",
+      "name": "Frost",
+      "level": 50,
+      "region": "na"
+    },
+    {
+      "id": "seed-7",
+      "name": "Glitch",
+      "level": 12,
+      "region": "oce"
+    },
+    {
+      "id": "seed-8",
+      "name": "Havoc",
+      "level": 39,
+      "region": "eu"
+    },
+    {
+      "id": "seed-9",
+      "name": "Ion",
+      "level": 4,
+      "region": "asia"
+    },
+    {
+      "id": "seed-10",
+      "name": "Jinx",
+      "level": 21,
+      "region": "na"
+    },
+    {
+      "id": "seed-11",
+      "name": "Kairo",
+      "level": 29,
+      "region": "eu"
+    },
+    {
+      "id": "seed-12",
+      "name": "Lumen",
+      "level": 15,
+      "region": "sa"
+    },
+    {
+      "id": "seed-13",
+      "name": "Mirage",
+      "level": 47,
+      "region": "asia"
+    },
+    {
+      "id": "seed-14",
+      "name": "Nova",
+      "level": 6,
+      "region": "oce"
+    },
+    {
+      "id": "seed-15",
+      "name": "Onyx",
+      "level": 36,
+      "region": "na"
+    },
+    {
+      "id": "seed-16",
+      "name": "Pulse",
+      "level": 19,
+      "region": "eu"
+    },
+    {
+      "id": "seed-17",
+      "name": "Quake",
+      "level": 44,
+      "region": "sa"
+    },
+    {
+      "id": "seed-18",
+      "name": "Rift",
+      "level": 10,
+      "region": "asia"
+    },
+    {
+      "id": "seed-19",
+      "name": "Shade",
+      "level": 31,
+      "region": "eu"
+    },
+    {
+      "id": "seed-20",
+      "name": "Titan",
+      "level": 23,
+      "region": "na"
+    }
+  ]
+}
