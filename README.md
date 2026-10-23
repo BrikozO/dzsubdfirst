@@ -50,19 +50,19 @@ docker compose up --build --watch
 conf/
   redis.conf            общий шаблон для всех Redis-узлов (персистентность, maxmemory, min-replicas-*)
   redis-entrypoint.sh   запуск Redis-узла: сборка конфига при первом старте, дальше им владеет Sentinel
-  sentinel.conf         шаблон Sentinel: monitor mymaster master 6379 2, resolve/announce-hostnames
+  sentinel.conf         шаблон Sentinel: monitor mymaster redis-master 6379 2, resolve/announce-hostnames
 ```
 
 Главный принцип: **исходная топология задаётся один раз, при первом запуске, а дальше ролями узлов управляет Sentinel.**
-Если прописать `--replicaof master 6379` в команде запуска, узел после любого перезапуска снова пойдёт реплицировать
-контейнер `master`, даже если тот уже не мастер. А исходный мастер, у которого в команде нет `replicaof`,
+Если прописать `--replicaof redis-master 6379` в команде запуска, узел после любого перезапуска снова пойдёт реплицировать
+контейнер `redis-master`, даже если тот уже не мастер. А исходный мастер, у которого в команде нет `replicaof`,
 после перезапуска поднимется вторым мастером — это воспроизводилось при проверке.
 
 Что делает `conf/redis-entrypoint.sh` при каждом старте узла:
 
 1. **Первый запуск** (в томе ещё нет `/data/redis.conf`): копирует шаблон `conf/redis.conf` и дописывает
    - `replica-announce-ip $REDIS_ANNOUNCE_HOST` — под этим именем мастер показывает узел в `INFO replication`,
-     а Sentinel его запоминает. Так все узлы известны по стабильным именам сервисов (`master`, `replica-1`, `replica-2`),
+     а Sentinel его запоминает. Так все узлы известны по стабильным именам сервисов (`redis-master`, `replica-1`, `replica-2`),
      без IP контейнеров и без дублей после failover;
    - `replicaof $REDIS_REPLICAOF` — только у исходных реплик.
 2. **Удаляет строки `loadmodule`** из конфига. Модули Redis 8 (JSON, Search и др.) подключает entrypoint образа
@@ -77,9 +77,9 @@ conf/
 
 | Сервис | `REDIS_ANNOUNCE_HOST` | `REDIS_REPLICAOF` |
 |---|---|---|
-| `master` | `master` | — |
-| `replica-1` | `replica-1` | `master 6379` |
-| `replica-2` | `replica-2` | `master 6379` |
+| `redis-master` | `redis-master` | — |
+| `replica-1` | `replica-1` | `redis-master 6379` |
+| `replica-2` | `replica-2` | `redis-master 6379` |
 
 После failover Sentinel переназначает роли командами `REPLICAOF` + `CONFIG REWRITE`, и конфиг в томе обновляется.
 Перезапущенный узел поднимается с последней назначенной ролью. Если исходный мастер остановили, пока он был мастером,
@@ -162,7 +162,7 @@ docker compose exec app python -m scripts.consume_notifications --once   # пр�
 
 Консьюмер сначала дочитывает свои неподтверждённые сообщения (`XREADGROUP ... 0`), затем ждёт новые (`XREADGROUP ... BLOCK ... >`).
 Каждое сообщение выводится в консоль и подтверждается `XACK`. Во время failover консьюмер переподключается сам.
-Запускать его нужно внутри docker-сети: Sentinel отдаёт имена узлов из неё (`master`, `replica-1`, `replica-2`), с хоста они не резолвятся.
+Запускать его нужно внутри docker-сети: Sentinel отдаёт имена узлов из неё (`redis-master`, `replica-1`, `replica-2`), с хоста они не резолвятся.
 
 ## Сценарии демонстрации
 

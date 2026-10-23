@@ -5,7 +5,7 @@ services:
     # Конфиг узла создаётся в /data при первом запуске, дальше его переписывает Sentinel (см. conf/redis-entrypoint.sh)
     command: sh /usr/local/etc/redis/redis-entrypoint.sh
     environment:
-      REDIS_ANNOUNCE_HOST: master
+      REDIS_ANNOUNCE_HOST: redis-master
     ports:
       - "6379:6379"
     volumes:
